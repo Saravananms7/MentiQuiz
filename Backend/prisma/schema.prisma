@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int       @id @default(autoincrement())
+  name     String
+  username String    @unique
+  password String
+  isAdmin  Boolean   @default(false)
+
+  quizzes     Quiz[]     @relation("CreatedQuizzes")
+  responses   Response[]
+  sessions    Session[]  @relation("ParticipantSessions")
+}
+
+model Quiz {
+  id        Int        @id @default(autoincrement())
+  title     String
+  code      String     @unique
+  isPoll    Boolean    @default(false)
+  isActive  Boolean    @default(false)
+  currentQuestionId Int?
+  createdById Int
+
+  createdBy User       @relation("CreatedQuizzes", fields: [createdById], references: [id])
+  questions Question[]
+  responses Response[]
+  sessions  Session[]
+}
+
+model Question {
+  id       Int       @id @default(autoincrement())
+  text     String
+  quizId   Int
+
+  quiz     Quiz      @relation(fields: [quizId], references: [id])
+  options  Option[]
+  responses Response[]
+}
+
+model Option {
+  id         Int       @id @default(autoincrement())
+  text       String
+  isCorrect  Boolean
+  questionId Int
+
+  question   Question  @relation(fields: [questionId], references: [id])
+  responses  Response[]
+}
+
+model Response {
+  id         Int      @id @default(autoincrement())
+  quizId     Int
+  questionId Int
+  optionId   Int
+  userId     Int
+
+  quiz       Quiz     @relation(fields: [quizId], references: [id])
+  question   Question @relation(fields: [questionId], references: [id])
+  option     Option   @relation(fields: [optionId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model Session {
+  id        Int     @id @default(autoincrement())
+  quizId    Int
+  userId    Int
+  joinedAt  DateTime @default(now())
+  isActive  Boolean @default(true)
+
+  quiz      Quiz    @relation(fields: [quizId], references: [id])
+  user      User    @relation("ParticipantSessions", fields: [userId], references: [id])
+}
+
